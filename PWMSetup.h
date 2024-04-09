@@ -1,4 +1,4 @@
-#include "pinsESP.h"
+#include "Consts.h"
 
 //FUNCTION TO SETUP PWM IN ESP32
 void SetupPWM(){
