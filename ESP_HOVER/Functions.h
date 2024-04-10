@@ -1,8 +1,17 @@
 #include "Consts.h"
 
+float a0 = 0.0148;
+float a1 = 0.0148;
+float b0 = 1;
+float b1 = -0.9704;
+unsigned long dt = 100; //millisecs
+
 //Variables for the filter
 float y = 0, x = 1, old_y = 0, old_x = 1;
 unsigned long contador_dt = 0;
+bool dir = true;
+
+const int PWM_DC = 50; 
 
 //Function of the filter
 float Filter(){
@@ -19,6 +28,8 @@ float Filter(){
 void SetupSpeed(){
   x=-x;
   Filter();
+  ledcWrite(LPWM_CHAN, y*PWM_DC);
+  ledcWrite(RPWM_CHAN, y*PWM_DC); 
   if(y==0)
     x=-x;
 }
@@ -28,8 +39,13 @@ void Foward(){
   if(y!=0)
     SetupSpeed();
 
-  digitalWrite(LDIR_PIN, true);
-  digitalWrite(RDIR_PIN, true);
+  //digitalWrite(LSTOP_PIN, !dir);
+  //digitalWrite(RSTOP_PIN, !dir);
+  //digitalWrite(LBREAK_PIN, !dir);
+  //digitalWrite(RBREAK_PIN, !dir);
+
+  digitalWrite(LDIR_PIN, dir);
+  digitalWrite(RDIR_PIN, dir);
   
   Filter();
   ledcWrite(LPWM_CHAN, y*PWM_DC);
@@ -42,8 +58,13 @@ void Backward(){
   if(y!=0)
     SetupSpeed();
   
-  digitalWrite(LDIR_PIN, false);
-  digitalWrite(RDIR_PIN, false);
+  //digitalWrite(LSTOP_PIN, !dir);
+  //digitalWrite(RSTOP_PIN, !dir);
+  //digitalWrite(LBREAK_PIN, !dir);
+  //digitalWrite(RBREAK_PIN, !dir);
+
+  digitalWrite(LDIR_PIN, !dir);
+  digitalWrite(RDIR_PIN, !dir);
 
   Filter();
   ledcWrite(LPWM_CHAN, y*PWM_DC);
@@ -56,8 +77,13 @@ void Left(){
   if(y!=0)
     SetupSpeed();
 
-  digitalWrite(LDIR_PIN, true);
-  digitalWrite(RDIR_PIN, false);
+  //digitalWrite(LSTOP_PIN, !dir);
+  //digitalWrite(RSTOP_PIN, !dir);
+  //digitalWrite(LBREAK_PIN, !dir);
+  //digitalWrite(RBREAK_PIN, !dir);
+
+  digitalWrite(LDIR_PIN, dir);
+  digitalWrite(RDIR_PIN, !dir);
  
   Filter();
   ledcWrite(LPWM_CHAN, y*PWM_DC);
@@ -70,8 +96,13 @@ void Right(){
   if(y!=0)
     SetupSpeed();
 
-  digitalWrite(LDIR_PIN, false);
-  digitalWrite(RDIR_PIN, true);
+  //digitalWrite(LSTOP_PIN, !dir);
+  //digitalWrite(RSTOP_PIN, !dir);
+  //digitalWrite(LBREAK_PIN, !dir);
+  //digitalWrite(RBREAK_PIN, !dir);
+
+  digitalWrite(LDIR_PIN, !dir);
+  digitalWrite(RDIR_PIN, dir);
   
   Filter();
   ledcWrite(LPWM_CHAN, y*PWM_DC);
@@ -80,14 +111,19 @@ void Right(){
 
 
 //Stop motor function
-void Stop(){
-  digitalWrite(LSTOP_PIN, true);
-  digitalWrite(RSTOP_PIN, true);
-}
+//void Stop(){
+//  digitalWrite(LSTOP_PIN, dir);
+//  digitalWrite(RSTOP_PIN, dir);
+//}
 
 
 //Break motor function
-void Break(){
-  digitalWrite(LBREAK_PIN, true);
-  digitalWrite(RBREAK_PIN, true);
+//void Break(){
+//  digitalWrite(LBREAK_PIN, dir);
+//  digitalWrite(RBREAK_PIN, dir);
+//}
+
+
+void Stopped(){
+  SetupSpeed();
 }

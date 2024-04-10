@@ -2,7 +2,7 @@
 #include <WiFi.h>
 #include "esp_now.h"
 
-uint8_t MacAdrressEscravo[] = { 0xF0, 0x08, 0xD1, 0x6B, 0xF0, 0x40 };
+uint8_t MacAdrressEscravo[] = { 0x9C, 0x9C, 0x1F, 0x47, 0x56, 0xF1 };
 
 //Defining the struct skeleton
 struct Package{
@@ -15,7 +15,7 @@ Package sentpackage = {
 };
 
 //Struct that storage infos about a peer that will be added in the esp-now network
-esp_now_peer_info_t ESPPeerInfo;
+esp_now_peer_info ESPPeerInfo;
 
 //void OnDataSent(){}
 
@@ -31,9 +31,6 @@ void SetupEspNow(){
     ESP.restart();
   }
 
-  else 
-    Serial.println("tudo certo 1");
-
   //esp_now_register_send_cb(OnDataSent);               //Registrate the callback function when any data is sent
 
   memcpy(ESPPeerInfo.peer_addr, MacAdrressEscravo, 6);       //Copy the Mac Address from the slave to the ESPPeerInfo struct
@@ -46,8 +43,6 @@ void SetupEspNow(){
     delay(1000);
     ESP.restart();
   }
-  else
-    Serial.println("tudo certo 2");
 }
 
 
@@ -56,32 +51,4 @@ void sendPackage(String signal){
   sentpackage.info = signal;
   esp_now_send(MacAdrressEscravo, (uint8_t *)&sentpackage, sizeof(sentpackage));
   delay(10);
-}
-
-void sendForward(){
-  sendPackage("Forward");
-}
-
-void sendBackward(){
-  sendPackage("Backward");
-}
-
-void sendRight(){
-  sendPackage("Right");
-}
-
-void sendLeft(){
-  sendPackage("Left");
-}
-
-void sendBreak(){
-  sendPackage("Break");
-}
-
-void sendStop(){
-  sendPackage("Stop");
-}
-
-void sendStopped(){
-  sendPackage("Stopped");
 }

@@ -2,6 +2,8 @@
 
 //FUNCTION TO SETUP PWM IN ESP32
 void SetupPWM(){
-  ledcSetup(PWM_CHAN, PWM_FREQ, PWM_RES);
-  ledcAttachPin(PWM_PIN, PWM_CHAN);
+  ledcSetup(RPWM_CHAN, PWM_FREQ, PWM_RES);
+  ledcSetup(LPWM_CHAN, PWM_FREQ, PWM_RES);
+  ledcAttachPin(RPWM_PIN, RPWM_CHAN);
+  ledcAttachPin(LPWM_PIN, LPWM_CHAN);
 }
