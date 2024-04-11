@@ -5,3 +5,6 @@
 #define BUTTON_RIGHT 26
 #define BUTTON_BREAK 22
 #define BUTTON_STOP 23
+
+//Channel that the esp-now will comunicate
+#define CHANNEL 1
