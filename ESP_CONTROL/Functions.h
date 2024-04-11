@@ -39,25 +39,6 @@ void InitESPNow(){
 }
 
 
-//Function that setup the esp-now
-void SetupEspNow(){
-  WiFi.disconnect();                                                                   //Disconnect the ESP from any device that it was connected
-  WiFi.mode(WIFI_STA);                                                                 //Define the WiFi mode as Station
-
-  InitESPNow();
-
-  //Struct that storage infos about a peer that will be added in the esp-now network
-  esp_now_peer_info_t ESPHover;
-
-  ESPHover.channel = CHANNEL;                                                           //Define the comunication chanel as 0 in the ESPHover struct
-  ESPHover.encrypt = 0;                                                                 //Define the encryption as false in the ESPHover struct
-  memcpy(ESPHover.peer_addr, SlaveMacAddress[1], sizeof(SlaveMacAddress[1]));           //Copy the Mac Address from the slave to the ESPHover struct
-  esp_now_add_peer(&ESPHover);
-
-  esp_now_register_send_cb(OnDataSent);                                                 //Registrate the callback function when any data is sent
-}
-
-
 //Function that recieve the signal and send it through the esp-now
 void sendPackage(){
   //Verify if any button is pressed, and if not, send to the hover to stop
@@ -72,7 +53,7 @@ void sendPackage(){
   else if(digitalRead(BUTTON_STOP) == 0)
     sentPackage.info = "Stop";
   else if(digitalRead(BUTTON_BREAK) == 0)
-    sentPackage.info = "Break";
+    sentPackage.info = "BRAKE";
   else
     sentPackage.info = "Stopped";
 
@@ -96,8 +77,29 @@ void OnDataSent(const uint8_t *mac_addr, esp_now_send_status_t status){
   Serial.println(macStr);
 
   Serial.print("Status: ");
-  Serial.println(status == ESP_NOW_SEND_SUCCESS ? "Sucesso" : "Falhou");                //Verify if the data was sent, if yes print "Sucesso", else print "Falhou"
-  sendPackage(sentPackage.info);
+  Serial.println(status == ESP_NOW_SEND_SUCCESS ? "Sucesso" : "Falhou");                //Verify if the data was sent, if yes print "Sucesso", else print 
+ 
+  sendPackage();                                                                      //Send a new data
+}
 
-  sendPackage();                                                                        //Send a new data
+esp_now_peer_info_t ESPHover;
+
+//Function that setup the esp-now
+void SetupEspNow(){
+  WiFi.disconnect();                                                                   //Disconnect the ESP from any device that it was connected
+  WiFi.mode(WIFI_STA);                                                                 //Define the WiFi mode as Station
+
+  InitESPNow();
+
+  //Struct that storage infos about a peer that will be added in the esp-now network
+
+  ESPHover.channel = CHANNEL;                                                           //Define the comunication chanel as 0 in the ESPHover struct
+  ESPHover.encrypt = 0;                                                                 //Define the encryption as false in the ESPHover struct
+  
+  memcpy(ESPHover.peer_addr, SlaveMacAddress[1], sizeof(SlaveMacAddress[1]));           //Copy the Mac Address from the slave to the ESPHover struct
+  esp_now_add_peer(&ESPHover);
+
+  esp_now_register_send_cb(OnDataSent);                                                 //Registrate the callback function when any data is sent
+
+  sendPackage();                                                                      //Send a new data
 }

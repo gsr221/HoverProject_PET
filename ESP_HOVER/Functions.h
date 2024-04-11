@@ -14,7 +14,7 @@ unsigned long dt = 100; //millisecs
 unsigned long contador_dt = 0;
 
 //Duty Cycle PWM (0-255)
-const int PWM_DC = 50; 
+int PWM_DC = 10; 
 
 //Defining the struct skeleton
 typedef struct package{
@@ -32,8 +32,8 @@ bool state = true;
 
 //FUNCTION TO SETUP PWM IN ESP32
 void SetupPWM(){
-  ledcSetup(PWM_CHAN, PWM_FREQ, PWM_RES);
   ledcAttachPin(PWM_PIN, PWM_CHAN);
+  ledcSetup(PWM_CHAN, PWM_FREQ, PWM_RES);
 }
 
 
@@ -62,27 +62,6 @@ void InitESPNow(){
 }
 
 
-//Callback function when the esp recieve data through esp-now
-void OnDataRecv(const uint8_t *mac_addr, const uint8_t *incomingData, int len) {
-  char macStr[18];
-  snprintf(macStr, sizeof(macStr), "%02x:%02x:%02x:%02x:%02x:%02x",
-    mac_addr[0], mac_addr[1], mac_addr[2], mac_addr[3], mac_addr[4], mac_addr[5]);
-  Serial.print("Dados recebidos de: ");
-  Serial.println(macStr);
-  memcpy(&recievedPackage, incomingData, sizeof(recievedPackage));
-  control();
-}
-
-
-//Setup the esp-now
-void SetupEspNow(){
-  WiFi.disconnect();                                    //Disconnect the ESP from any device that it was connected
-  WiFi.mode(WIFI_STA);                                  //Define the WiFi mode as Station
-  InitESPNow()
-  esp_now_register_recv_cb(OnDataRecv);                 //Registrate the callback function when any data is sent
-}
-
-
 //Function of the filter
 float Filter(){
   if(millis()-contador_dt>dt){
@@ -96,8 +75,8 @@ float Filter(){
 
 
 void SetupStopBrake(){
-  digitalWrite(LSTOP_PIN, !state);
-  digitalWrite(RSTOP_PIN, !state);
+  digitalWrite(LSTOP_PIN, state);
+  digitalWrite(RSTOP_PIN, state);
   digitalWrite(LBRAKE_PIN, !state);
   digitalWrite(RBRAKE_PIN, !state);
 }
@@ -105,20 +84,18 @@ void SetupStopBrake(){
 
 //Set y to 0
 void SetupSpeed(){
-  x=-x;
-  Filter();
-  ledcWrite(PWM_CHAN, y*PWM_DC); 
-  if(y==0)
-    x=-x;
+//  x=-x;
+//  Filter();
+//  ledcWrite(PWM_CHAN, y*PWM_DC); 
+//  if(y==0)
+//    x=-x;
 }
 
 
 //Move forward function
 void Foward(){
-  if(y!=0)
-    SetupSpeed();
 
-  SetupStopBrake()
+  SetupStopBrake();
 
   digitalWrite(LDIR_PIN, state);
   digitalWrite(RDIR_PIN, state);
@@ -126,6 +103,8 @@ void Foward(){
   Filter();
   ledcWrite(PWM_CHAN, y*PWM_DC);
   Serial.println("Indo pra frente");
+  Serial.println(y*PWM_DC);
+  
 }
 
 
@@ -134,7 +113,7 @@ void Backward(){
   if(y!=0)
     SetupSpeed();
   
-  SetupStopBrake()
+  SetupStopBrake();
 
   digitalWrite(LDIR_PIN, !state);
   digitalWrite(RDIR_PIN, !state);
@@ -150,7 +129,7 @@ void Left(){
   if(y!=0)
     SetupSpeed();
 
-  SetupStopBrake()
+  SetupStopBrake();
 
   digitalWrite(LDIR_PIN, state);
   digitalWrite(RDIR_PIN, !state);
@@ -166,7 +145,7 @@ void Right(){
   if(y!=0)
     SetupSpeed();
 
-  SetupStopBrake()
+  SetupStopBrake();
 
   digitalWrite(LDIR_PIN, !state);
   digitalWrite(RDIR_PIN, state);
@@ -179,9 +158,9 @@ void Right(){
 
 //Stop driver function
 void Stop(){
-  digitalWrite(LSTOP_PIN, state);
-  digitalWrite(RSTOP_PIN, state);
-  Serial.println("Stop ativado");
+ // digitalWrite(LSTOP_PIN, state);
+ // digitalWrite(RSTOP_PIN, state);
+  //Serial.println("Stop ativado");
 }
 
 
@@ -194,9 +173,10 @@ void BRAKE(){
 
 //Makes the motor stop function
 void Stopped(){
-  SetupSpeed();
+  //SetupSpeed();
   Serial.println("Parado");
 }
+
 
 //Function that interpretate the signal and do any of the functions previously declared
 void control(){
@@ -214,4 +194,25 @@ void control(){
     Stop();
   else
     Stopped();
+}
+
+
+void OnDataRecv(const uint8_t *mac_addr, const uint8_t *incomingData, int len) {
+  char macStr[18];
+  snprintf(macStr, sizeof(macStr), "%02x:%02x:%02x:%02x:%02x:%02x",
+    mac_addr[0], mac_addr[1], mac_addr[2], mac_addr[3], mac_addr[4], mac_addr[5]);
+  Serial.print("Dados recebidos de: ");
+  Serial.println(macStr);
+  memcpy(&recievedPackage, incomingData, sizeof(recievedPackage));
+  control();
+}
+
+
+//Setup the esp-now
+void SetupEspNow(){
+  WiFi.disconnect();                                    //Disconnect the ESP from any device that it was connected
+  WiFi.mode(WIFI_STA);                                  //Define the WiFi mode as Station
+  InitESPNow();
+  esp_now_register_recv_cb(OnDataRecv);                 //Registrate the callback function when any data is sent
+  control();
 }

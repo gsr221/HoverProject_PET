@@ -1,6 +1,5 @@
 #include "Consts.h"
 #include "Functions.h"
-#include "PinsSetup.h"
 
 int BOUND_RATE = 115200;
 
