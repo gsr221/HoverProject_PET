@@ -1,4 +1,3 @@
-//CONSTANTES
 //PWM CONFIG
 #define PWM_PIN 15
 #define PWM_CHAN 1
@@ -9,12 +8,12 @@
 
 //LEFT MOTOR BLDC DRIVER PINS
 #define LDIR_PIN 4
-#define LSTOP_PIN 5
+//#define LSTOP_PIN 5
 #define LBRAKE_PIN 18
 //#define LSPEED_PIN = 
 
 //RIGHT MOTOR BLDC DRIVER PINS
 #define RDIR_PIN 12
-#define RSTOP_PIN 14
+//#define RSTOP_PIN 14
 #define RBRAKE_PIN 27
 //#define RSPEED_PIN = 

@@ -30,37 +30,7 @@ package recievedPackage{
 bool state = true;
 
 
-//FUNCTION TO SETUP PWM IN ESP32
-void SetupPWM(){
-  ledcAttachPin(PWM_PIN, PWM_CHAN);
-  ledcSetup(PWM_CHAN, PWM_FREQ, PWM_RES);
-}
-
-
-//Function that declare the pins
-void SetupPins(){
-  pinMode(LDIR_PIN, OUTPUT);
-  pinMode(LSTOP_PIN, OUTPUT);
-  pinMode(LBRAKE_PIN, OUTPUT);
-  //pinMode(LSPEED_PIN, INPUT);
-
-  pinMode(RDIR_PIN, OUTPUT);
-  pinMode(RSTOP_PIN, OUTPUT);
-  pinMode(RBRAKE_PIN, OUTPUT);
-  //pinMode(RSPEED_PIN, INPUT);
-}
-
-
-//Function that init the esp-now
-void InitESPNow(){
-  if(esp_now_init() == ESP_OK)
-    Serial.println("ESPNow inicizalido :)");
-  else{
-    Serial.println("Inicialização do ESPNow falhou");
-    ESP.restart();
-  }
-}
-
+//------------Filter Function------------//
 
 //Function of the filter
 float Filter(){
@@ -74,48 +44,65 @@ float Filter(){
 }
 
 
-void SetupStopBrake(){
-  digitalWrite(LSTOP_PIN, state);
-  digitalWrite(RSTOP_PIN, state);
+//------------Setups Function------------//
+
+//FUNCTION TO SETUP PWM IN ESP32
+void SetupPWM(){
+  ledcAttachPin(PWM_PIN, PWM_CHAN);
+  ledcSetup(PWM_CHAN, PWM_FREQ, PWM_RES);
+}
+
+
+//Function that declare the pins
+void SetupPins(){
+  pinMode(LDIR_PIN, OUTPUT);
+  pinMode(LBRAKE_PIN, OUTPUT);
+  //pinMode(LSPEED_PIN, INPUT);
+
+  pinMode(RDIR_PIN, OUTPUT);
+  pinMode(RBRAKE_PIN, OUTPUT);
+  //pinMode(RSPEED_PIN, INPUT);
+}
+
+
+void SetupBrake(){
   digitalWrite(LBRAKE_PIN, !state);
   digitalWrite(RBRAKE_PIN, !state);
 }
 
 
-//Set y to 0
-void SetupSpeed(){
-//  x=-x;
-//  Filter();
-//  ledcWrite(PWM_CHAN, y*PWM_DC); 
-//  if(y==0)
-//    x=-x;
-}
+//------------Move Functions------------//
 
+//Set y to 0 gradually
+void ResetSpeed(){
+  x=-x;
+  while(y>0){
+    Filter();
+    ledcWrite(PWM_CHAN, y*PWM_DC);
+  }  
+  if(y<0)
+    y=0; 
+}
 
 //Move forward function
 void Foward(){
 
-  SetupStopBrake();
+  SetupBrake();
 
-  digitalWrite(LDIR_PIN, state);
+  digitalWrite(LDIR_PIN, !state);
   digitalWrite(RDIR_PIN, state);
   
   Filter();
   ledcWrite(PWM_CHAN, y*PWM_DC);
-  Serial.println("Indo pra frente");
-  Serial.println(y*PWM_DC);
-  
+  Serial.println("Indo pra frente"); 
 }
-
 
 //Move Backward function
 void Backward(){
-  if(y!=0)
-    SetupSpeed();
   
-  SetupStopBrake();
+  SetupBrake();
 
-  digitalWrite(LDIR_PIN, !state);
+  digitalWrite(LDIR_PIN, state);
   digitalWrite(RDIR_PIN, !state);
 
   Filter();
@@ -123,15 +110,12 @@ void Backward(){
   Serial.println("Indo pra tras");  
 }
 
-
 //Move Left function
 void Left(){
-  if(y!=0)
-    SetupSpeed();
 
-  SetupStopBrake();
+  SetupBrake();
 
-  digitalWrite(LDIR_PIN, state);
+  digitalWrite(LDIR_PIN, !state);
   digitalWrite(RDIR_PIN, !state);
  
   Filter();
@@ -139,15 +123,17 @@ void Left(){
   Serial.println("Indo pra esquerda");     
 }
 
-
 //Move Right function
 void Right(){
-  if(y!=0)
-    SetupSpeed();
+  //Reset the value of y and the speed of the hover gradually
+//  if(pressedButton != recievedPackage.info && pressedButton != "Stopped"){
+//    ResetSpeed();
+//    pressedButton = recievedPackage.info;
+//  }
 
-  SetupStopBrake();
+  SetupBrake();
 
-  digitalWrite(LDIR_PIN, !state);
+  digitalWrite(LDIR_PIN, state);
   digitalWrite(RDIR_PIN, state);
   
   Filter();
@@ -155,17 +141,15 @@ void Right(){
   Serial.println("Indo pra direita");    
 }
 
-
-//Stop driver function
-void Stop(){
+//Stop driver function (We're not using)
+//void Stop(){
  // digitalWrite(LSTOP_PIN, state);
  // digitalWrite(RSTOP_PIN, state);
   //Serial.println("Stop ativado");
-}
-
+//}
 
 //Brak driver function
-void BRAKE(){
+void Brake(){
   digitalWrite(LBRAKE_PIN, state);
   digitalWrite(RBRAKE_PIN, state);
   Serial.println("Brake ativado");
@@ -173,29 +157,47 @@ void BRAKE(){
 
 //Makes the motor stop function
 void Stopped(){
-  //SetupSpeed();
+  //Reset the value of y and the speed of the hover gradually
+  ResetSpeed();
   Serial.println("Parado");
 }
 
 
-//Function that interpretate the signal and do any of the functions previously declared
-void control(){
-  if(recievedPackage.info == "Forward")
-    Foward();
-  else if(recievedPackage.info == "Backward")
-    Backward();
-  else if(recievedPackage.info == "Left")
-    Left();
-  else if(recievedPackage.info == "Right")
-    Right();
-  else if(recievedPackage.info == "BRAKE")
-    BRAKE();
-  else if(recievedPackage.info == "Stop")
-    Stop();
-  else
-    Stopped();
+//------------ESP NOW Functions------------//
+
+//Function that init the esp-now
+void InitESPNow(){
+  if(esp_now_init() == ESP_OK)
+    Serial.println("ESPNow inicizalido :)");
+  else{
+    Serial.println("Inicialização do ESPNow falhou");
+    ESP.restart();
+  }
 }
 
+//Function that interpretate the signal and do any of the functions previously declared
+void control(){
+  if(recievedPackage.info == "Forward"){
+    Foward();
+  }
+  else if(recievedPackage.info == "Backward"){
+    Backward();
+  }    
+  else if(recievedPackage.info == "Left"){
+    Left();
+  }    
+  else if(recievedPackage.info == "Right"){
+    Right();
+  }   
+  else if(recievedPackage.info == "BRAKE"){
+    Brake();
+  }    
+//  else if(recievedPackage.info == "Stop")
+//    Stop();
+  else{
+    Stopped();
+  }    
+}
 
 void OnDataRecv(const uint8_t *mac_addr, const uint8_t *incomingData, int len) {
   char macStr[18];
@@ -206,7 +208,6 @@ void OnDataRecv(const uint8_t *mac_addr, const uint8_t *incomingData, int len) {
   memcpy(&recievedPackage, incomingData, sizeof(recievedPackage));
   control();
 }
-
 
 //Setup the esp-now
 void SetupEspNow(){
