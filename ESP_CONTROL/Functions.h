@@ -6,13 +6,13 @@
 uint8_t SlaveMacAddress[][6] = { {0xF0, 0x08, 0xD1, 0x6B, 0xF0, 0x40} };
 
 //Defining the struct
-struct Package{
+typedef struct package{
   String info;
-};
+}package;
 
 
 //Creating the struct that will be sent through the esp-now
-Package sentPackage = {
+package sentPackage = {
   .info = "Stopped"
 };
 

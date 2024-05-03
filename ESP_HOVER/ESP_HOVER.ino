@@ -9,6 +9,7 @@ void setup() {
   SetupPWM();
   SetupPins();
   SetupEspNow();
+  TurnDriversOn();
 
   Serial.println("Setup finalizado");
   Serial.println("---------------------------------");

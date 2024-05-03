@@ -2,37 +2,37 @@
 #include <WiFi.h>
 #include <esp_now.h>
 
-//Parameters for the filter
+//Parametros do filtro
 float a0 = 0.0148;
 float a1 = 0.0148;
 float b0 = 1;
 float b1 = -0.9704;
 
-//Variables for the filter
+//Variáveis para o filtro
 float y = 0, x = 1, old_y = 0, old_x = 1;
 unsigned long dt = 100; //millisecs
 unsigned long contador_dt = 0;
 
-//Duty Cycle PWM (0-255)
+//Duty Cycle do PWM (0-255)
 int PWM_DC = 10; 
 
-//Defining the struct skeleton
+//Definição do esqueleto da estrutura
 typedef struct package{
   String info;
 }package;
 
-//Creating the struct that will be recieved through the esp-now
+//Criando a estrutura q irá receber a informação recebida pelo ESP-NOW
 package recievedPackage{
   .info = "Stopped"
 };
 
-//Variable to indicate the bool state
+//Variável que indica o estado boleano
 bool state = true;
 
 
-//------------Filter Function------------//
+//------------Função do filtro------------//
 
-//Function of the filter
+//Função
 float Filter(){
   if(millis()-contador_dt>dt){
     contador_dt=millis();
@@ -44,36 +44,36 @@ float Filter(){
 }
 
 
-//------------Setups Function------------//
+//------------Funções de Setup------------//
 
-//FUNCTION TO SETUP PWM IN ESP32
+//Função para realizar o setup do PWM
 void SetupPWM(){
   ledcAttachPin(PWM_PIN, PWM_CHAN);
   ledcSetup(PWM_CHAN, PWM_FREQ, PWM_RES);
 }
 
 
-//Function that declare the pins
+//Função que declara os pinos
 void SetupPins(){
   pinMode(LDIR_PIN, OUTPUT);
   pinMode(LBRAKE_PIN, OUTPUT);
-  //pinMode(LSPEED_PIN, INPUT);
 
   pinMode(RDIR_PIN, OUTPUT);
   pinMode(RBRAKE_PIN, OUTPUT);
-  //pinMode(RSPEED_PIN, INPUT);
+
+  pinMode(RELAY_PIN, OUTPUT);
 }
 
-
+//Função para inicializar os pinos do Brake em False
 void SetupBrake(){
   digitalWrite(LBRAKE_PIN, !state);
   digitalWrite(RBRAKE_PIN, !state);
 }
 
 
-//------------Move Functions------------//
+//------------Funções de movimento------------//
 
-//Set y to 0 gradually
+//Reseta o valor de Y para 0
 void ResetSpeed(){
   x=-x;
   while(y>0){
@@ -84,7 +84,7 @@ void ResetSpeed(){
     y=0; 
 }
 
-//Move forward function
+//Função para mover para frente
 void Foward(){
 
   SetupBrake();
@@ -97,7 +97,7 @@ void Foward(){
   Serial.println("Indo pra frente"); 
 }
 
-//Move Backward function
+//Função para mover para trás
 void Backward(){
   
   SetupBrake();
@@ -110,7 +110,7 @@ void Backward(){
   Serial.println("Indo pra tras");  
 }
 
-//Move Left function
+//Função para mover para esquerda
 void Left(){
 
   SetupBrake();
@@ -123,14 +123,8 @@ void Left(){
   Serial.println("Indo pra esquerda");     
 }
 
-//Move Right function
+//Função para mover para direita
 void Right(){
-  //Reset the value of y and the speed of the hover gradually
-//  if(pressedButton != recievedPackage.info && pressedButton != "Stopped"){
-//    ResetSpeed();
-//    pressedButton = recievedPackage.info;
-//  }
-
   SetupBrake();
 
   digitalWrite(LDIR_PIN, state);
@@ -141,21 +135,14 @@ void Right(){
   Serial.println("Indo pra direita");    
 }
 
-//Stop driver function (We're not using)
-//void Stop(){
- // digitalWrite(LSTOP_PIN, state);
- // digitalWrite(RSTOP_PIN, state);
-  //Serial.println("Stop ativado");
-//}
-
-//Brak driver function
+//Função para ativar o Brake
 void Brake(){
   digitalWrite(LBRAKE_PIN, state);
   digitalWrite(RBRAKE_PIN, state);
   Serial.println("Brake ativado");
 }
 
-//Makes the motor stop function
+//Função que faz o motor parar
 void Stopped(){
   //Reset the value of y and the speed of the hover gradually
   ResetSpeed();
@@ -163,19 +150,9 @@ void Stopped(){
 }
 
 
-//------------ESP NOW Functions------------//
+//------------Funções para o ESP NOW------------//
 
-//Function that init the esp-now
-void InitESPNow(){
-  if(esp_now_init() == ESP_OK)
-    Serial.println("ESPNow inicizalido :)");
-  else{
-    Serial.println("Inicialização do ESPNow falhou");
-    ESP.restart();
-  }
-}
-
-//Function that interpretate the signal and do any of the functions previously declared
+//Função para interpretar o sinal recebido e executar alguma das funções declaradas anteriormente
 void control(){
   if(recievedPackage.info == "Forward"){
     Foward();
@@ -192,13 +169,22 @@ void control(){
   else if(recievedPackage.info == "BRAKE"){
     Brake();
   }    
-//  else if(recievedPackage.info == "Stop")
-//    Stop();
   else{
     Stopped();
   }    
 }
 
+//Função que inicializa o ESP-NOW
+void InitESPNow(){
+  if(esp_now_init() == ESP_OK)
+    Serial.println("ESPNow inicizalido :)");
+  else{
+    Serial.println("Inicialização do ESPNow falhou");
+    ESP.restart();
+  }
+}
+
+//Função que será executada quando for recebido algum dadopelo ESP-NOW
 void OnDataRecv(const uint8_t *mac_addr, const uint8_t *incomingData, int len) {
   char macStr[18];
   snprintf(macStr, sizeof(macStr), "%02x:%02x:%02x:%02x:%02x:%02x",
@@ -209,11 +195,16 @@ void OnDataRecv(const uint8_t *mac_addr, const uint8_t *incomingData, int len) {
   control();
 }
 
-//Setup the esp-now
+//Função que faz o setup do ESP-NOW
 void SetupEspNow(){
-  WiFi.disconnect();                                    //Disconnect the ESP from any device that it was connected
-  WiFi.mode(WIFI_STA);                                  //Define the WiFi mode as Station
+  WiFi.disconnect();                                    //Disconecta o ESP de qualquer dispositivo que eles esteja previamente conectado
+  WiFi.mode(WIFI_STA);                                  //Define modo do WiFi como State
   InitESPNow();
-  esp_now_register_recv_cb(OnDataRecv);                 //Registrate the callback function when any data is sent
+  esp_now_register_recv_cb(OnDataRecv);                 //Registra a função de callback quando algum dado é recebido
   control();
+}
+
+//Função que ativa o relé, ligando os drivers
+void TurnDriversOn(){
+  digitalWrite(RELAY_PIN, state);
 }
