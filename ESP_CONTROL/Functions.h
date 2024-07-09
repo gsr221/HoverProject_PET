@@ -2,22 +2,22 @@
 #include <WiFi.h>
 #include <esp_now.h>
 
-//Slave Mac Address
+//Endereço MAC do Slave
 uint8_t SlaveMacAddress[][6] = { {0xF0, 0x08, 0xD1, 0x6B, 0xF0, 0x40} };
 
-//Defining the struct
+//Definindo a struct
 typedef struct package{
   String info;
 }package;
 
 
-//Creating the struct that will be sent through the esp-now
+//Criando a Struct que será enviada via esp-now
 package sentPackage = {
   .info = "Stopped"
 };
 
 
-//Function that declare the pins
+//Função para declarar os pinos
 void SetupPins(){
   pinMode(BUTTON_FORWARD, INPUT_PULLUP);
   pinMode(BUTTON_BACKWARD, INPUT_PULLUP);
@@ -28,7 +28,7 @@ void SetupPins(){
 }
 
 
-//Function that init the esp-now
+//Função que inicia o esp-now
 void InitESPNow(){
   if(esp_now_init() == ESP_OK)
     Serial.println("ESPNow inicizalido :)");
@@ -39,9 +39,9 @@ void InitESPNow(){
 }
 
 
-//Function that recieve the signal and send it through the esp-now
+//Função que recebe o sinal do botão pressionado e envia via esp now
 void sendPackage(){
-  //Verify if any button is pressed, and if not, send to the hover to stop
+  //Verifica se algum botão foi pressionado
   if(digitalRead(BUTTON_FORWARD) == 0)
     sentPackage.info = "Forward";
   else if(digitalRead(BUTTON_BACKWARD) == 0)
@@ -59,7 +59,7 @@ void sendPackage(){
 
   esp_err_t result = esp_now_send(SlaveMacAddress[1], (uint8_t *)&sentPackage, sizeof(sentPackage));
   Serial.println("Status de envio: ");
-  if(result == ESP_OK){                               //Verify if the data was sent
+  if(result == ESP_OK){                               //Verifica se o dado foi enviado
     Serial.print("Sucesso, sinal enviado: ");
     Serial.println(sentPackage.info);
   }else{
@@ -68,38 +68,37 @@ void sendPackage(){
 }
 
 
-//Callback function when data is sent
+//Função de callback, chamada ao enviar um dado
 void OnDataSent(const uint8_t *mac_addr, esp_now_send_status_t status){
   char macStr[18];
   snprintf(macStr, sizeof(macStr), "%02x:%02x:%02x:%02x:%02x:%02x",
-    mac_addr[0], mac_addr[1], mac_addr[2], mac_addr[3], mac_addr[4], mac_addr[5]);      //Prints the Mac Address that was sent
+    mac_addr[0], mac_addr[1], mac_addr[2], mac_addr[3], mac_addr[4], mac_addr[5]);      //Printa o endereço MAC do dispositivo que foi enviado o dado
   Serial.print("Pacote enviado para: ");
   Serial.println(macStr);
 
   Serial.print("Status: ");
-  Serial.println(status == ESP_NOW_SEND_SUCCESS ? "Sucesso" : "Falhou");                //Verify if the data was sent, if yes print "Sucesso", else print 
+  Serial.println(status == ESP_NOW_SEND_SUCCESS ? "Sucesso" : "Falhou");                //Verifica se o dado foi enviado corretamente
  
-  sendPackage();                                                                      //Send a new data
+  sendPackage();                                                                      //Envia um novo sinal
 }
 
+//Strutura que armazena as informações do par que sera conectado no esp now
 esp_now_peer_info_t ESPHover;
 
-//Function that setup the esp-now
+//Função que configura o esp now
 void SetupEspNow(){
-  WiFi.disconnect();                                                                   //Disconnect the ESP from any device that it was connected
-  WiFi.mode(WIFI_STA);                                                                 //Define the WiFi mode as Station
+  WiFi.disconnect();                                                                   //Desconecta o esp de qualquer dispositivo que ele esteja previamente conectado
+  WiFi.mode(WIFI_STA);                                                                 //Define o WIFI do esp como Station
 
   InitESPNow();
 
-  //Struct that storage infos about a peer that will be added in the esp-now network
-
-  ESPHover.channel = CHANNEL;                                                           //Define the comunication chanel as 0 in the ESPHover struct
-  ESPHover.encrypt = 0;                                                                 //Define the encryption as false in the ESPHover struct
+  ESPHover.channel = CHANNEL;                                                           //Define o canal de comunicação como 0
+  ESPHover.encrypt = 0;                                                                 //Define a encripitação como falsa
   
-  memcpy(ESPHover.peer_addr, SlaveMacAddress[1], sizeof(SlaveMacAddress[1]));           //Copy the Mac Address from the slave to the ESPHover struct
+  memcpy(ESPHover.peer_addr, SlaveMacAddress[1], sizeof(SlaveMacAddress[1]));           //Copia o endereço MAC do par na struct ESPHover
   esp_now_add_peer(&ESPHover);
 
-  esp_now_register_send_cb(OnDataSent);                                                 //Registrate the callback function when any data is sent
+  esp_now_register_send_cb(OnDataSent);                                                 //Regisra a função de callback
 
-  sendPackage();                                                                      //Send a new data
+  sendPackage();                                                                      //Envia um dado
 }
