@@ -13,6 +13,3 @@
 //RIGHT MOTOR BLDC DRIVER PINS
 #define RDIR_PIN 12
 #define RBRAKE_PIN 27
-
-//Pino relé digital
-#define RELAY_PIN 25
