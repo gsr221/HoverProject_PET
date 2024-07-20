@@ -16,6 +16,8 @@ unsigned long contador_dt = 0;
 //Duty Cycle do PWM (0-255)
 int PWM_DC = 10; 
 
+bool brakeActivate = false;
+
 //Definição do esqueleto da estrutura
 typedef struct package{
   String info;
@@ -86,8 +88,8 @@ void ResetSpeed(){
 
 //Função para mover para frente
 void Foward(){
-
-  SetupBrake();
+  if (brakeActivate)
+    SetupBrake();
 
   digitalWrite(LDIR_PIN, !state);
   digitalWrite(RDIR_PIN, state);
@@ -99,8 +101,8 @@ void Foward(){
 
 //Função para mover para trás
 void Backward(){
-  
-  SetupBrake();
+  if (brakeActivate)
+    SetupBrake();
 
   digitalWrite(LDIR_PIN, state);
   digitalWrite(RDIR_PIN, !state);
@@ -112,8 +114,8 @@ void Backward(){
 
 //Função para mover para esquerda
 void Left(){
-
-  SetupBrake();
+  if (brakeActivate)
+      SetupBrake();
 
   digitalWrite(LDIR_PIN, !state);
   digitalWrite(RDIR_PIN, !state);
@@ -125,7 +127,8 @@ void Left(){
 
 //Função para mover para direita
 void Right(){
-  SetupBrake();
+  if (brakeActivate)
+    SetupBrake();
 
   digitalWrite(LDIR_PIN, state);
   digitalWrite(RDIR_PIN, state);
@@ -137,6 +140,7 @@ void Right(){
 
 //Função para ativar o Brake
 void Brake(){
+  brakeActivate = true;
   digitalWrite(LBRAKE_PIN, state);
   digitalWrite(RBRAKE_PIN, state);
   Serial.println("Brake ativado");
