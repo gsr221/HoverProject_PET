@@ -68,6 +68,7 @@ void SetupPins(){
 
 //Função para inicializar os pinos do Brake em False
 void SetupBrake(){
+  brakeActivate = false;
   digitalWrite(LBRAKE_PIN, !state);
   digitalWrite(RBRAKE_PIN, !state);
 }
